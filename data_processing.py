@@ -2,6 +2,7 @@ import pdfplumber
 import re
 import pandas as pd
 from collections import defaultdict
+import report_generator as rg
 
 months = ["January", "February", "March", "April", "May", "June",
           "July", "August", "September", "October", "November", "December"]
@@ -25,7 +26,7 @@ def clean_desc_line(line):
     return None
     
 
-def description_grabbing():
+def description_grabbing(pdf):
     """Grabs all descriptions from the PDF, character by character."""
     descs = []
     for page in pdf.pages:
@@ -84,7 +85,7 @@ def merge_alpha_components(line):
     return result
 
 
-def number_grabbing():
+def number_grabbing(pdf):
     """Grabs all numbers from the PDF, merging components that contain alphabetic characters."""
     merged_lines = []
     for page in pdf.pages:
@@ -100,28 +101,33 @@ def number_grabbing():
     return merged_lines
 
 
-with pdfplumber.open(r"C:\Users\ciaranqu\Documents\Projects\Proj1\SA727 Christchurch - I and E Cost Centre - APR 2025.pdf") as pdf:
-    descs = description_grabbing()
-    lines = number_grabbing()
-    del cols[3]
-    
-    desc_line_pairs = []
-    for i in range(len(lines)):
-        desc_line_pairs.append((descs[i], lines[i]))
-    
-    rows = []
-    for (desc, is_bold), values in desc_line_pairs:
-        row = [desc] + values + [is_bold]
-        rows.append(row)
+def open_pdf():
+    with pdfplumber.open(r"C:\Users\ciaranqu\Documents\Projects\Finance Reports\SA727 Christchurch - I and E Cost Centre - APR 2025.pdf") as pdf:
+        descs = description_grabbing(pdf)
+        lines = number_grabbing(pdf)
+        del cols[3]
+        
+        desc_line_pairs = []
+        for i in range(len(lines)):
+            desc_line_pairs.append((descs[i], lines[i]))
+        
+        rows = []
+        for (desc, is_bold), values in desc_line_pairs:
+            row = [desc] + values + [is_bold]
+            rows.append(row)
 
-    final_cols = ["description"] + cols + ["is_bold"]
+        final_cols = ["description"] + cols + ["is_bold"]
 
-    # Create DataFrame
-    df = pd.DataFrame(rows, columns=final_cols)
-    
-    print(df)
-    print(desc_line_pairs[0])
-    print(descs[0])
-    print(lines[0])
+        # Create DataFrame
+        df = pd.DataFrame(rows, columns=final_cols)
+        
+        print(df)
+        print(desc_line_pairs[0])
+        print(descs[0])
+        print(lines[0])
+
+        # Create Excel file
+        rg.xlsx_create(df)
+
 
 
