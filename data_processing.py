@@ -29,6 +29,7 @@ def clean_desc_line(line):
 def description_grabbing(pdf):
     """Grabs all descriptions from the PDF, character by character."""
     descs = []
+    page_count = 1
     for page in pdf.pages:
         chars = page.chars
         lines_by_y = defaultdict(list)
@@ -59,10 +60,11 @@ def description_grabbing(pdf):
             cleaned = clean_desc_line(line)
             if cleaned: #not null
                 if is_bold:
-                    descs.append((cleaned, is_bold))
+                    descs.append((cleaned, is_bold, page_count))
                 else:
-                    descs.append((cleaned, is_bold))
-    return descs
+                    descs.append((cleaned, is_bold, page_count))
+        page_count += 1
+    return descs, page_count
 
 def merge_alpha_components(line):
     """Merges components of a line that contain alphabetic characters."""
@@ -101,33 +103,65 @@ def number_grabbing(pdf):
     return merged_lines
 
 
+def grab_branch(pdf):
+    """Grabs name of each branch."""
+    branches = []
+    for page in pdf.pages:
+        text = page.extract_text().split('\n')
+        if not text[4].startswith("Month"):
+            branches.append(text[4])
+        else:
+            branches.append(text[3])
+        
+    return branches
+
+
 def open_pdf():
     with pdfplumber.open(r"C:\Users\ciaranqu\Documents\Projects\Finance Reports\SA727 Christchurch - I and E Cost Centre - APR 2025.pdf") as pdf:
-        descs = description_grabbing(pdf)
+        descs, page_count = description_grabbing(pdf)
         lines = number_grabbing(pdf)
-        del cols[3]
-        
+        del cols[8], cols[6], cols[3], cols[2]
+        branches = grab_branch(pdf)
+
+        branch_dict = {}
+        for b in branches:
+            branch_dict[b] = []
+
+        for l in lines:
+            del l[7], l[5], l[2]
+            for i in range(len(l)):
+                element = l[i]
+                cleaned_element = re.sub(r'[(),]', '', element)
+                l[i] = int(cleaned_element)
+
         desc_line_pairs = []
         for i in range(len(lines)):
+            print(cols)
+            print(lines[i])
             desc_line_pairs.append((descs[i], lines[i]))
-        
+
         rows = []
-        for (desc, is_bold), values in desc_line_pairs:
+        for (desc, is_bold, pg_count), values in desc_line_pairs:
             row = [desc] + values + [is_bold]
             rows.append(row)
-
+            associated_branch = branches[pg_count - 1]
+            branch_dict[associated_branch].append(row)
+        
+        
         final_cols = ["description"] + cols + ["is_bold"]
 
+        df_dict = {}
+        for branch, data in branch_dict.items():
+            df = pd.DataFrame(data, columns=final_cols)
+            df_dict[branch] = df
+
         # Create DataFrame
-        df = pd.DataFrame(rows, columns=final_cols)
-        
-        print(df)
-        print(desc_line_pairs[0])
-        print(descs[0])
-        print(lines[0])
+        for branch, df in df_dict.items():
+            print(f"Branch: {branch}, length: {len(branch)}")
+            # print(df)
 
         # Create Excel file
-        rg.xlsx_create(df)
+        rg.xlsx_create(df_dict)
 
 
 
