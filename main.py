@@ -1,4 +1,4 @@
-import data_processing as dp
+import gui
 
 if __name__ == "__main__":
-    dp.open_pdf()
+    gui.run_gui()

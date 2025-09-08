@@ -3,6 +3,7 @@ import re
 import pandas as pd
 from collections import defaultdict
 import report_generator as rg
+import report_append as ra
 
 months = ["January", "February", "March", "April", "May", "June",
           "July", "August", "September", "October", "November", "December"]
@@ -64,7 +65,7 @@ def description_grabbing(pdf):
                 else:
                     descs.append((cleaned, is_bold, page_count))
         page_count += 1
-    return descs, page_count
+    return descs
 
 def merge_alpha_components(line):
     """Merges components of a line that contain alphabetic characters."""
@@ -115,13 +116,25 @@ def grab_branch(pdf):
         
     return branches
 
+def date_grabbing(pdf):
+    """Grabs the date from the PDF."""
+    date = ""
+    for i, page in enumerate(pdf.pages):
+        if i == 0:
+            text = page.extract_text().split('\n')
+            date = text[2]
+        else:
+            break
+    return date
 
-def open_pdf():
-    with pdfplumber.open(r"C:\Users\ciaranqu\Documents\Projects\Finance Reports\SA727 Christchurch - I and E Cost Centre - APR 2025.pdf") as pdf:
-        descs, page_count = description_grabbing(pdf)
+
+def open_pdf(path_to_pdf, output_path, output_filename):
+    with pdfplumber.open(path_to_pdf) as pdf:
+        descs = description_grabbing(pdf)
         lines = number_grabbing(pdf)
         del cols[8], cols[6], cols[3], cols[2]
         branches = grab_branch(pdf)
+        date = date_grabbing(pdf)
 
         branch_dict = {}
         for b in branches:
@@ -136,8 +149,6 @@ def open_pdf():
 
         desc_line_pairs = []
         for i in range(len(lines)):
-            print(cols)
-            print(lines[i])
             desc_line_pairs.append((descs[i], lines[i]))
 
         rows = []
@@ -155,13 +166,15 @@ def open_pdf():
             df = pd.DataFrame(data, columns=final_cols)
             df_dict[branch] = df
 
-        # Create DataFrame
-        for branch, df in df_dict.items():
-            print(f"Branch: {branch}, length: {len(branch)}")
-            # print(df)
-
         # Create Excel file
-        rg.xlsx_create(df_dict)
+        complete_path = f"{output_path}/{output_filename}.xlsx"
+        load = False  # Set to True to load existing data or False to create new data
+        if not load:
+            rg.xlsx_create(df_dict, date, complete_path)
+        else:
+            # load new sheet onto existing sheet
+            ra.xlsx_append(df_dict, date, complete_path)
+        
 
 
 
