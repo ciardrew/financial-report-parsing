@@ -1,5 +1,6 @@
 import pandas as pd
 import xlsxwriter as xw
+import graph_creation as gc
 
 section_headers = ["Income", "Expenditure", "Operating Surplus / Deficit before Contributions and Depn", "Intra-Regional Contribution", "Surplus / Deficit"]
 
@@ -47,3 +48,5 @@ def xlsx_create(df_dict, date, complete_path):
                 working_sheet.set_column(col_num, col_num, column_len)
 
             row_offset += 4 # Add 3 rows for a gap before the next table
+
+    gc.graph_sheet_creation(complete_path)  # Call the graph creation function to add graphs to the sheet
