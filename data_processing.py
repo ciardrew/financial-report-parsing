@@ -167,8 +167,8 @@ def open_pdf(path_to_pdf, output_path, output_filename):
             df_dict[branch] = df
 
         # Create Excel file
-        complete_path = f"{output_path}/{output_filename}.xlsx"
-        load = False  # Set to True to load existing data or False to create new data
+        complete_path = f"{output_path}\\{output_filename}.xlsx"
+        load = True  # Set to True to load existing data or False to create new data
         if not load:
             rg.xlsx_create(df_dict, date, complete_path)
         else:

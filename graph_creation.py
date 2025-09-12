@@ -11,7 +11,7 @@ def is_cost_centre(name):
 def graph_sheet_creation(complete_path):
     workbook = load_workbook(complete_path)
     sheetnames = [s for s in workbook.sheetnames if s != "Data Visualization"]
-
+    
     # Dictionary to hold cost centre data
     cost_centre_data = {}
 
@@ -52,10 +52,11 @@ def graph_sheet_creation(complete_path):
             incomes.append(values['income'] if values['income'] is not None else 0)
             expenditures.append(values['expenditure'] if values['expenditure'] is not None else 0)
         
-        
+        months_shorthand = [month.split(" ")[0][:3] + month.split(" ")[1][2:] for month in months]
+
         plt.figure(figsize=(8, 5))
-        plt.plot(months, incomes, label='Income', linestyle='solid')
-        plt.plot(months, expenditures, label='Expenditure', linestyle='solid')
+        plt.plot(months_shorthand, incomes, label='Income', linestyle='solid')
+        plt.plot(months_shorthand, expenditures, label='Expenditure', linestyle='solid')
         plt.xlabel('Month')
         plt.ylabel('Amount (NZD)')
         plt.title(f'{centre} - Income/Expenditure/Total by Month')
@@ -68,4 +69,5 @@ def graph_sheet_creation(complete_path):
         img = Image(img_filename)
         vis_sheet.add_image(img, f'B{img_row}')
         img_row += 30 
+        
     workbook.save(complete_path)
