@@ -12,9 +12,7 @@ def xlsx_append(df_dict, date, complete_path):
     workbook = load_workbook(complete_path)
     sheetnames = [s for s in workbook.sheetnames if s != "Data Visualization"]
     split_sheetnames = [s.split(" ")[0] for s in sheetnames]
-    print(sheetnames)
-    print(date)
-    print(date.split(" ")[0])
+    
     if date not in sheetnames or date.split(" ")[0] not in split_sheetnames:
         sheet = workbook.create_sheet(title=date)
         row_offset = 1
@@ -41,8 +39,9 @@ def xlsx_append(df_dict, date, complete_path):
         row_offset += 5
 
         for branch, df in df_dict.items():
+            df_out = df.drop(columns=['is_bold'], inplace=False)
             # Headers with orange format
-            for col_num, col_name in enumerate(df.columns, start=1):
+            for col_num, col_name in enumerate(df_out.columns, start=1):
                 if col_num == 1:
                     sheet.cell(row=row_offset, column=1, value=branch).fill = orange_fill
                 else:
@@ -53,14 +52,16 @@ def xlsx_append(df_dict, date, complete_path):
 
             # descriptions
             for _, row in df.iterrows():
+                # Prepare the output row without 'is_bold'
+                row_out = [value for key, value in row.items() if key != 'is_bold']
                 if row['description'] in section_headers:
-                    for col_num, value in enumerate(row, start=1):
+                    for col_num, value in enumerate(row_out, start=1):
                         cell = sheet.cell(row=row_offset, column=col_num, value=value)
                         cell.font = bold_font
                         cell.border = border
                     row_offset += 1
                 else:
-                    for col_num, value in enumerate(row, start=1):
+                    for col_num, value in enumerate(row_out, start=1):
                         cell = sheet.cell(row=row_offset, column=col_num, value=value)
                         if col_num == 1 and not row['is_bold']:
                             cell.alignment = Alignment(indent=4)
@@ -75,6 +76,5 @@ def xlsx_append(df_dict, date, complete_path):
 
         workbook.save(complete_path)
 
-        gc.graph_sheet_creation(complete_path)  # Call the graph creation function to add graphs to the sheet
     else:
         print("Sheet already created for that report")

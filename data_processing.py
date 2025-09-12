@@ -128,13 +128,16 @@ def date_grabbing(pdf):
     return date
 
 
-def open_pdf(path_to_pdf, output_path, output_filename):
+def open_pdf(path_to_pdf, output_path, output_filename, load=True):
+    print("JOABFOUEBOB", path_to_pdf)
     with pdfplumber.open(path_to_pdf) as pdf:
         descs = description_grabbing(pdf)
         lines = number_grabbing(pdf)
-        del cols[8], cols[6], cols[3], cols[2]
         branches = grab_branch(pdf)
         date = date_grabbing(pdf)
+
+        local_cols = cols.copy()
+        del local_cols[8], local_cols[6], local_cols[3], local_cols[2]
 
         branch_dict = {}
         for b in branches:
@@ -159,7 +162,7 @@ def open_pdf(path_to_pdf, output_path, output_filename):
             branch_dict[associated_branch].append(row)
         
         
-        final_cols = ["description"] + cols + ["is_bold"]
+        final_cols = ["description"] + local_cols + ["is_bold"]
 
         df_dict = {}
         for branch, data in branch_dict.items():
@@ -168,7 +171,7 @@ def open_pdf(path_to_pdf, output_path, output_filename):
 
         # Create Excel file
         complete_path = f"{output_path}\\{output_filename}.xlsx"
-        load = True  # Set to True to load existing data or False to create new data
+        
         if not load:
             rg.xlsx_create(df_dict, date, complete_path)
         else:

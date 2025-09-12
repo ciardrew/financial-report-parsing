@@ -59,7 +59,7 @@ def graph_sheet_creation(complete_path):
         plt.plot(months_shorthand, expenditures, label='Expenditure', linestyle='solid')
         plt.xlabel('Month')
         plt.ylabel('Amount (NZD)')
-        plt.title(f'{centre} - Income/Expenditure/Total by Month')
+        plt.title(f'{centre} - Income/Expenditure by Month')
         plt.legend()
         plt.tight_layout()
         img_filename = f"{centre.replace(' ', '_').replace('/', '_')}_plot.png"
@@ -67,7 +67,7 @@ def graph_sheet_creation(complete_path):
         plt.close()
 
         img = Image(img_filename)
-        vis_sheet.add_image(img, f'B{img_row}')
+        vis_sheet.add_image(img, f'Q{img_row}')
         img_row += 30 
-        
+
     workbook.save(complete_path)

@@ -2,6 +2,8 @@ import tkinter as tk
 from tkinter import filedialog, messagebox
 import report_generator
 import data_processing as dp
+import os
+import graph_creation as gc
 
 class CostCentreGUI:
     def __init__(self, root):
@@ -11,9 +13,9 @@ class CostCentreGUI:
         root.geometry("600x350")
 
         # Define instance variables for user input
-        self.path_to_pdf = ''
+        self.pdf_folder = ''
         self.output_path = ''
-        self.output_filename = 'wage_report'
+        self.output_filename = 'I&E Report'
         self.create_widgets()
 
     def create_widgets(self):
@@ -35,13 +37,13 @@ class CostCentreGUI:
         input_frame = tk.Frame(self.root, bg='#F0F0F0', height=50)
         input_frame.pack(fill='x', pady=10)
 
-        input_label = tk.Label(input_frame, text="Select .pdf File*:", font=("Arial", 12))
+        input_label = tk.Label(input_frame, text="Select .pdf Folder*:", font=("Arial", 12))
         input_label.pack(side='left', padx=10)
 
-        self.input_field = tk.Label(input_frame, text=self.path_to_pdf, bg="#FFFFFF", fg='black', width=50, relief='sunken', anchor='w')
+        self.input_field = tk.Label(input_frame, text=self.pdf_folder, bg="#FFFFFF", fg='black', width=50, relief='sunken', anchor='w')
         self.input_field.pack(side='left')
 
-        select_input_button = tk.Button(input_frame, text="Browse Files", command=self.browse_file, bg="#ECECEC", fg='black')
+        select_input_button = tk.Button(input_frame, text="Browse Files", command=self.select_pdf_folder, bg="#ECECEC", fg='black')
         select_input_button.pack(side='right', padx=13)
 
         ##################################################
@@ -134,13 +136,12 @@ class CostCentreGUI:
         help_text.pack(side="left", fill="both", expand=True)
         scrollbar.config(command=help_text.yview)
     
-    def browse_file(self):
-        """Function to browse and select a PDF file."""
-        file_path = tk.filedialog.askopenfilename(filetypes=[("PDF files", "*.pdf")])
-        if file_path:
-            self.path_to_pdf = file_path
-            print(f"Selected file: {self.path_to_pdf}")
-            self.input_field.config(text=self.path_to_pdf)
+    def select_pdf_folder(self):
+        """Selects a folder containing PDF files."""
+        folder_path = filedialog.askdirectory()
+        if folder_path:
+            self.pdf_folder = folder_path
+            self.input_field.config(text=self.pdf_folder)
 
     def retrieve_output_filename(self):
         """Function to retrieve the output filename from the input field."""
@@ -160,15 +161,37 @@ class CostCentreGUI:
 
     def create_report_command(self):
         """Called when the 'Generate Report' button is pressed. Calls the report parser"""
-        if self.path_to_pdf and self.output_path:
-            
-            dp.open_pdf(self.path_to_pdf, self.output_path, self.output_filename)
-
-            messagebox.showinfo("Success", "Report created successfully!")
+        if hasattr(self, 'pdf_folder') and self.pdf_folder and self.output_path:
+            pdf_files = get_sorted_pdf_files(self.pdf_folder)
+            output_filename = self.output_filename
+            complete_path = f"{self.output_path}\\{output_filename}.xlsx"
+            first = True
+            for pdf_path in pdf_files:
+                # Set load=False for first file, True for others
+                dp.open_pdf(pdf_path, self.output_path, output_filename, load=not first)
+                first = False
+            gc.graph_sheet_creation(complete_path)  # Call the graph creation function to add graphs to the sheet
+            messagebox.showinfo("Success", "All reports processed successfully!")
             self.root.destroy()
         else:
-            messagebox.showerror("Error", "Please select a .xlsx file and an output path.")
+            messagebox.showerror("Error", "Please select a PDF folder and an output path.")
+import re
 
+def extract_month_year(filename, month_order):
+    """Extracts month and year from a filename."""
+    match = re.search(r'(' + '|'.join(month_order) + r')\s+(\d{4})', filename.upper())
+    if match:
+        month = match.group(1)
+        year = int(match.group(2))
+        month_idx = month_order.index(month)
+        return (year, month_idx)
+
+def get_sorted_pdf_files(pdf_folder):
+    """Returns a list of PDF file paths sorted by month."""
+    month_order = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"]
+    pdf_files = [f for f in os.listdir(pdf_folder) if f.lower().endswith('.pdf')]
+    pdf_files.sort(key=lambda f: extract_month_year(f, month_order))
+    return [os.path.join(pdf_folder, f) for f in pdf_files]
 
 
 def run_gui():
@@ -176,4 +199,3 @@ def run_gui():
     root = tk.Tk()
     app = CostCentreGUI(root)
     root.mainloop()
-

@@ -20,8 +20,9 @@ def xlsx_create(df_dict, date, complete_path):
         row_offset += 5
 
         for branch, df in df_dict.items():
+            df_out = df.drop(columns=['is_bold'], inplace=False)
             # headers with orange format
-            for col_num, col_name in enumerate(df.columns):
+            for col_num, col_name in enumerate(df_out.columns):
                 if col_num == 0:
                     working_sheet.write(row_offset, 0, branch, orange_format)
                 else:
@@ -30,12 +31,14 @@ def xlsx_create(df_dict, date, complete_path):
 
             # descriptions
             for _, row in df.iterrows():
+                # Prepare the output row without 'is_bold'
+                row_out = [value for key, value in row.items() if key != 'is_bold']
                 if row['description'] in section_headers:
-                    for col_num, value in enumerate(row):
+                    for col_num, value in enumerate(row_out):
                         working_sheet.write(row_offset, col_num, value, bold_format)
                     row_offset += 1
                 else:
-                    for col_num, value in enumerate(row):
+                    for col_num, value in enumerate(row_out):
                         if not row['is_bold']:
                             working_sheet.write(row_offset, 0, " " * 12 + row['description'])
                         working_sheet.write(row_offset, col_num, value)
@@ -49,4 +52,4 @@ def xlsx_create(df_dict, date, complete_path):
 
             row_offset += 4 # Add 3 rows for a gap before the next table
 
-    gc.graph_sheet_creation(complete_path)  # Call the graph creation function to add graphs to the sheet
+    
